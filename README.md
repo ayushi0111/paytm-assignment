@@ -24,6 +24,26 @@ The SQLite file is created automatically at `data/urls.sqlite` (override with th
 `DATABASE_PATH` env var). Other env vars: `PORT` (default `3000`), `BASE_URL` (used to
 build the `shortUrl` field in responses; default `http://localhost:<PORT>`).
 
+## Test credentials
+
+A demo account is seeded automatically on every server startup (idempotent — safe to
+restart), so you can try the API immediately without signing up first:
+
+```
+email:    demo@example.com
+password: demo12345
+```
+
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"demo@example.com","password":"demo12345"}'
+# -> { "apiKey": "..." } — use as `Authorization: Bearer <apiKey>` on subsequent requests
+```
+
+This is a dev/demo convenience (`src/seed.ts`) — not something a real deployment should
+ship with a hardcoded password for.
+
 ## Test
 
 ```bash
@@ -149,6 +169,32 @@ tests/
   unit/                   one file per module, in-memory DB, no network calls
   integration/            full app.ts flow via supertest
 ```
+
+## Hosting options
+
+This is a single Node process with a local SQLite file (`better-sqlite3`, a native
+addon) — that rules out pure serverless/edge platforms (Vercel/Netlify/Lambda functions
+have read-only or ephemeral filesystems, so the DB file wouldn't persist between
+requests, and native addons don't run in edge runtimes). It fits best on any host that
+runs a long-lived process with a persistent disk:
+
+- **Render** — connect the GitHub repo, "Web Service," build `npm run build`, start
+  `npm start`. Add a paid persistent disk mounted at `/data` and set
+  `DATABASE_PATH=/data/urls.sqlite` (the free tier has ephemeral disk, so the DB resets
+  on every redeploy/restart — fine for a demo, not for real persistence). Simplest option
+  to point reviewers at.
+- **Railway** — same shape as Render (GitHub-connected, auto-detects Node, `npm start`),
+  with a mountable volume for the SQLite file. Similarly quick to stand up.
+- **Fly.io** — more control: ships a `Dockerfile`, has first-class persistent volumes
+  designed for exactly this (a single-writer SQLite file on a small VM). More setup
+  (`flyctl launch`), best fit if you outgrow the free tiers above.
+- **A plain VPS** (DigitalOcean/Linode/EC2) — full control, run under `pm2` or a
+  systemd unit behind nginx/Caddy for TLS. Most setup work, no platform lock-in.
+
+If you'd rather not manage a disk at all, the cleanest change would be swapping
+`better-sqlite3` for a hosted SQLite-compatible service (e.g. Turso/libSQL) or Postgres —
+that would also unlock the serverless platforms, at the cost of a real (if small)
+migration from the current schema/queries.
 
 ## What's missing / next steps
 
