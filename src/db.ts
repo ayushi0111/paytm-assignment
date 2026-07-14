@@ -5,18 +5,29 @@ import path from 'path';
 export type DB = Database.Database;
 
 const SCHEMA = `
+  CREATE TABLE IF NOT EXISTS users (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    email         TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    api_key       TEXT NOT NULL UNIQUE,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
   CREATE TABLE IF NOT EXISTS urls (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
     code             TEXT NOT NULL UNIQUE,
     original_url     TEXT NOT NULL,
     normalized_url   TEXT NOT NULL,
     is_custom        INTEGER NOT NULL DEFAULT 0,
+    owner_id         INTEGER NOT NULL REFERENCES users(id),
     click_count      INTEGER NOT NULL DEFAULT 0,
     last_accessed_at TEXT,
-    created_at       TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at       TEXT
   );
 
-  CREATE INDEX IF NOT EXISTS idx_urls_normalized_url ON urls(normalized_url);
+  CREATE INDEX IF NOT EXISTS idx_urls_owner_normalized ON urls(owner_id, normalized_url);
+  CREATE INDEX IF NOT EXISTS idx_urls_owner ON urls(owner_id);
 `;
 
 export function createDatabase(filename: string): DB {
