@@ -13,9 +13,13 @@ const SCHEMA = `
     created_at    TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
+  -- code is nullable only transiently: generated (non-custom) codes are
+  -- derived from the row's own id, so the row is inserted with code = NULL
+  -- and updated once the id is known. SQLite treats each NULL in a UNIQUE
+  -- index as distinct, so this never collides with a real code.
   CREATE TABLE IF NOT EXISTS urls (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
-    code             TEXT NOT NULL UNIQUE,
+    code             TEXT UNIQUE,
     original_url     TEXT NOT NULL,
     normalized_url   TEXT NOT NULL,
     is_custom        INTEGER NOT NULL DEFAULT 0,
