@@ -46,5 +46,33 @@ export function createLinksRouter(
     })
   );
 
+  router.get(
+    '/api/links',
+    requireAuth,
+    asyncHandler(async (req, res) => {
+      const links = urlService.listByOwner(req.userId!).map((record) => serializeLink(record, baseUrl));
+      res.status(200).json({ links });
+    })
+  );
+
+  router.get(
+    '/api/links/:code',
+    requireAuth,
+    asyncHandler(async (req, res) => {
+      const record = urlService.getByCodeForOwner(req.userId!, req.params.code);
+      res.status(200).json(serializeLink(record, baseUrl));
+    })
+  );
+
+  router.patch(
+    '/api/links/:code',
+    requireAuth,
+    asyncHandler(async (req, res) => {
+      const { url } = req.body ?? {};
+      const record = urlService.update(req.userId!, req.params.code, url);
+      res.status(200).json(serializeLink(record, baseUrl));
+    })
+  );
+
   return router;
 }

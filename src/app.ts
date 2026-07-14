@@ -1,4 +1,4 @@
-import express, { NextFunction, Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import { DB } from './db';
 import { UserService } from './services/userService';
 import { UrlService } from './services/urlService';
@@ -6,8 +6,8 @@ import { createAuthRouter } from './routes/auth';
 import { createLinksRouter, ReachabilityChecker } from './routes/links';
 import { createRedirectRouter } from './routes/redirect';
 import { createRequireAuth } from './middleware/requireAuth';
+import { errorHandler } from './middleware/errorHandler';
 import { checkUrlReachable } from './utils/checkUrlReachable';
-import { ConflictError, InvalidInputError, NotFoundError, UnauthorizedError } from './errors';
 
 export function createApp(db: DB, baseUrl = 'http://localhost:3000', checkReachable: ReachabilityChecker = checkUrlReachable) {
   const app = express();
@@ -27,15 +27,7 @@ export function createApp(db: DB, baseUrl = 'http://localhost:3000', checkReacha
     res.status(404).json({ error: 'Not found' });
   });
 
-  app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-    if (err instanceof InvalidInputError) return void res.status(400).json({ error: err.message });
-    if (err instanceof UnauthorizedError) return void res.status(401).json({ error: err.message });
-    if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
-    if (err instanceof ConflictError) return void res.status(409).json({ error: err.message });
-
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
-  });
+  app.use(errorHandler);
 
   return app;
 }
