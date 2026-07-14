@@ -18,7 +18,6 @@ provably collision-free short-code generator. Node.js + TypeScript + Express + S
 - [Design decisions](#design-decisions)
 - [Test](#test)
 - [Project structure](#project-structure)
-- [What's missing / next steps](#whats-missing--next-steps)
 
 ## Install & run
 
@@ -361,10 +360,3 @@ tests/
   unit/                   one file per module, in-memory DB, no network calls
   integration/            full app.ts flow via supertest
 ```
-
-## What's missing / next steps
-
-See the write-up (`WRITEUP.md`) for the fuller list, but briefly: no rate limiting, no
-API-key rotation, the reachability probe has no SSRF hardening, short codes are still
-sequentially guessable (an attacker can enumerate low ids) since obscuring that was out
-of scope here, and there's no frontend — the "dashboard" is a JSON API only.
