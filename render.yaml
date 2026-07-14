@@ -1,0 +1,29 @@
+# Render Blueprint (https://render.com/docs/blueprint-spec).
+# Deploy via: Render dashboard -> New + -> Blueprint -> connect this repo.
+#
+# Requires a paid instance type ("starter" or above) because Render's free
+# tier has no persistent disk - without one, the SQLite file is wiped on
+# every redeploy/restart. For a throwaway demo where that's acceptable,
+# change `plan` to `free` and delete the `disk` block below.
+services:
+  - type: web
+    name: url-shortener
+    env: node
+    plan: starter
+    region: oregon
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: 22.14.0
+      - key: DATABASE_PATH
+        value: /data/urls.sqlite
+      # Render assigns PORT itself and injects it automatically - no need to set it.
+      - key: BASE_URL
+        sync: false # set this in the dashboard once you know the assigned onrender.com URL
