@@ -17,7 +17,6 @@ provably collision-free short-code generator. Node.js + TypeScript + Express + S
 - [Key workflows](#key-workflows)
 - [Design decisions](#design-decisions)
 - [Test](#test)
-- [Deploying to Render](#deploying-to-render)
 - [Project structure](#project-structure)
 - [What's missing / next steps](#whats-missing--next-steps)
 
@@ -343,31 +342,6 @@ Unit tests use an in-memory SQLite database (`:memory:`); integration tests exer
 full Express app through `createApp()`. No test makes a real network call — the
 reachability checker is dependency-injected and stubbed everywhere it's exercised.
 
-## Deploying to Render
-
-`render.yaml` in the repo root is a [Render Blueprint](https://render.com/docs/blueprint-spec)
-— it describes the whole service so Render can create it from one file instead of manual
-dashboard clicks.
-
-1. Push this repo to GitHub (Render deploys from a GitHub/GitLab repo, not a local
-   folder).
-2. In the Render dashboard: **New +** → **Blueprint** → connect the repo → Render reads
-   `render.yaml` and shows you the plan (a web service + a 1 GB persistent disk mounted
-   at `/data`, holding the SQLite file).
-3. Approve and deploy. Render runs `npm install && npm run build` then `npm start`.
-4. Once it's live, set `BASE_URL` (in the service's **Environment** tab) to the
-   `https://<your-service>.onrender.com` URL Render assigns, so `shortUrl` in responses
-   points at the real host instead of `localhost`.
-
-The blueprint requests a paid instance type because Render's **free** tier has no
-persistent disk — the SQLite file would be wiped on every redeploy/restart. If you just
-want a throwaway demo and don't mind that, edit `render.yaml`, drop the `disk:` block
-and set `plan: free`.
-
-I can't complete this deploy myself — it needs your own Render account and GitHub
-authorization through their dashboard — but everything above should make it a few
-clicks once you're there.
-
 ## Project structure
 
 ```
@@ -386,7 +360,6 @@ src/
 tests/
   unit/                   one file per module, in-memory DB, no network calls
   integration/            full app.ts flow via supertest
-render.yaml               Render Blueprint (see Deploying to Render)
 ```
 
 ## What's missing / next steps
