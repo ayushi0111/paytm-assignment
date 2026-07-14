@@ -97,4 +97,38 @@ describe('URL shortener app (integration)', () => {
     const res = await request(buildApp()).get('/deeply/nested/unknown/path');
     expect(res.status).toBe(404);
   });
+
+  it('returns 400 (not 500) for a malformed JSON request body', async () => {
+    const app = buildApp();
+    const { body } = await request(app)
+      .post('/auth/signup')
+      .send({ email: 'malformed@example.com', password: 'password123' });
+
+    const res = await request(app)
+      .post('/shorten')
+      .set('Authorization', `Bearer ${body.apiKey}`)
+      .set('Content-Type', 'application/json')
+      .send('{"url": "https://example.com/"'); // missing closing brace - invalid JSON
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/not valid JSON/i);
+  });
+
+  it('creates the link with a warning when the destination is syntactically valid but unreachable', async () => {
+    const db = createDatabase(':memory:');
+    const app = createApp(db, 'http://localhost:3000', async () => false);
+
+    const { body: signup } = await request(app)
+      .post('/auth/signup')
+      .send({ email: 'unreachable@example.com', password: 'password123' });
+
+    const res = await request(app)
+      .post('/shorten')
+      .set('Authorization', `Bearer ${signup.apiKey}`)
+      .send({ url: 'http://gfsagaasgre.com/' });
+
+    expect(res.status).toBe(201);
+    expect(res.body.code).toBeTruthy();
+    expect(res.body.warning).toMatch(/could not be reached/i);
+  });
 });
